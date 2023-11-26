@@ -1,42 +1,38 @@
-import { Component } from 'react';
+import React from 'react';
+import { useState } from 'react';
 import { SearchbarCounteiner } from './Searchbar.styled';
 
-export class Searchbar extends Component {
-  state = {
-    query: '',
+export const Searchbar = ({ onSubmit }) => {
+  const [query, setQuery] = useState('');
+
+  const handleChangeText = evt => {
+    setQuery(evt.currentTarget.value.toLowerCase());
   };
 
-  handleChangeText = evt => {
-    this.setState({ query: evt.currentTarget.value.toLowerCase() });
-  };
-
-  handleSubmit = evt => {
+  const handleSubmit = evt => {
     evt.preventDefault();
-    if (this.state.query.trim() === '') {
+    if (query.trim() === '') {
       return;
     }
-    this.props.onSubmit(this.state.query);
-
-    this.setState({ query: '' });
+    onSubmit(query);
+    setQuery('');
   };
 
-  render() {
-    return (
-      <SearchbarCounteiner>
-        <form onSubmit={this.handleSubmit}>
-          <button type="submit">
-            <span>Search</span>
-          </button>
-          <input
-            type="text"
-            autoComplete="off"
-            name="text"
-            placeholder="Search images and photos"
-            value={this.state.query}
-            onChange={this.handleChangeText}
-          />
-        </form>
-      </SearchbarCounteiner>
-    );
-  }
-}
+  return (
+    <SearchbarCounteiner>
+      <form onSubmit={handleSubmit}>
+        <button type="submit">
+          <span>Search</span>
+        </button>
+        <input
+          type="text"
+          autoComplete="off"
+          name="text"
+          placeholder="Search images and photos"
+          value={query}
+          onChange={handleChangeText}
+        />
+      </form>
+    </SearchbarCounteiner>
+  );
+};

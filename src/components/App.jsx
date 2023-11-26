@@ -1,4 +1,5 @@
-import { Component } from 'react';
+import React from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Searchbar } from './Searchbar/Searchbar';
 import { ImageGallery } from './ImageGallery/ImageGallery';
 import fetchImages from '../API';
@@ -6,84 +7,91 @@ import { Loaders } from './Loader/Loader';
 import { Button } from './Button/Button.js';
 import { Modal } from './Modal/Modal';
 
-export class App extends Component {
-  state = {
+export const App = () => {
+  const [state, setState] = useState({
     query: '',
     images: [],
     page: 1,
-    getMoreImg: true,
-    isLoading: false,
-    showModal: false,
-    selectedImage: '',
-  };
+  });
 
-  componentDidUpdate(prevProp, prevState) {
-    if (
-      prevState.query !== this.state.query ||
-      prevState.page !== this.state.page
-    ) {
-      this.getData();
+  const [getMoreImg, setGetMoreImg] = useState({ getMoreImg: true });
+
+  const [isLoading, setIsLoading] = useState({ isLoading: false });
+
+  const [showModal, setShowModal] = useState({ showModal: false });
+
+  const [selectedImage, setSelectedImage] = useState({ selectedImage: '' });
+
+  const { images, query, page } = state;
+
+  const getData = useCallback(async () => {
+    if (query && page) {
+      try {
+        const newImages = await fetchImages(query, page);
+        setState(prev => ({
+          ...prev,
+          images: [...prev.images, ...newImages],
+        }));
+        setGetMoreImg(newImages.length > 0);
+      } catch (error) {
+        console.error('Error fetching images:', error);
+      }
+
+      setIsLoading(false);
     }
-  }
+  }, [page, query]);
 
-  handleFormSubmit = query => {
-    this.setState({
+  useEffect(() => {
+    setShowModal(false);
+
+    if (!query) {
+      return;
+    }
+    getData();
+  }, [getData, query, page]);
+
+  const handleFormSubmit = query => {
+    setState(prev => ({
+      ...prev,
       query,
       images: [],
       page: 1,
-      getMoreImg: true,
-      isLoading: true,
-    });
+    }));
+    setIsLoading(true);
   };
 
-  handleCloseModal = () => {
-    this.setState({ showModal: false, selectedImage: '' });
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedImage('');
   };
 
-  handleClickOpenModal = selectedImage => {
-    this.setState({ showModal: true, selectedImage });
+  const handleClickOpenModal = selectedImage => {
+    setShowModal(true);
+    setSelectedImage(selectedImage);
   };
 
-  handleClickNextPage = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }));
+  const handleClickNextPage = () => {
+    setState(prev => ({
+      ...prev,
+      page: prev.page + 1,
+    }));
   };
 
-  getData = async () => {
-    const { query, page } = this.state;
-    try {
-      const newImages = await fetchImages(query, page);
-      this.setState(prevState => ({
-        images: [...prevState.images, ...newImages],
-        getMoreImg: newImages.length > 0,
-      }));
-    } catch (error) {
-      console.error('Error fetching images:', error);
-    }
+  return (
+    <>
+      <Searchbar onSubmit={handleFormSubmit} />
 
-    this.setState({ isLoading: false });
-  };
+      <ImageGallery
+        query={query}
+        images={images}
+        onClickImageItem={handleClickOpenModal}
+      />
 
-  render() {
-    const { images, isLoading, selectedImage, showModal } = this.state;
+      {isLoading === true && <Loaders />}
 
-    return (
-      <>
-        <Searchbar onSubmit={this.handleFormSubmit} />
+      {images.length !== 0 && <Button onClick={handleClickNextPage} />}
 
-        <ImageGallery
-          query={this.state.query}
-          images={images}
-          onClickImageItem={this.handleClickOpenModal}
-        />
-
-        {isLoading === true && <Loaders />}
-
-        {images.length !== 0 && <Button onClick={this.handleClickNextPage} />}
-
-        {showModal && (
-          <Modal image={selectedImage} onClose={this.handleCloseModal} />
-        )}
-      </>
-    );
-  }
-}
+      {showModal && <Modal image={selectedImage} onClose={handleCloseModal} />}
+    </>
+  );
+};
