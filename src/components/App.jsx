@@ -13,7 +13,7 @@ export const App = () => {
     images: [],
     page: 1,
   });
-
+  //eslint-disable-next-line
   const [getMoreImg, setGetMoreImg] = useState({ getMoreImg: true });
 
   const [isLoading, setIsLoading] = useState({ isLoading: false });
